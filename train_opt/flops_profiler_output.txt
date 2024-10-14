@@ -1,0 +1,680 @@
+
+-------------------------- DeepSpeed Flops Profiler --------------------------
+Profile Summary at step 1:
+Notations:
+data parallel size (dp_size), model parallel size(mp_size),
+number of parameters (params), number of multiply-accumulate operations(MACs),
+number of floating-point operations (flops), floating-point operations per second (FLOPS),
+fwd latency (forward propagation latency), bwd latency (backward propagation latency),
+step (weights update latency), iter latency (sum of fwd, bwd and step latency)
+
+world size:                                                             2       
+data parallel size:                                                     2       
+model parallel size:                                                    1       
+batch size per GPU:                                                     1       
+params per GPU:                                                         270.56 M
+params of model = params per GPU * mp_size:                             270.56 M
+fwd MACs per GPU:                                                       26.3 TMACs
+fwd flops per GPU:                                                      52.6 T  
+fwd flops of model = fwd flops per GPU * mp_size:                       52.6 T  
+fwd latency:                                                            1.17 s  
+fwd FLOPS per GPU = fwd flops per GPU / fwd latency:                    44.88 TFLOPS
+bwd latency:                                                            1.76 s  
+bwd FLOPS per GPU = 2 * fwd flops per GPU / bwd latency:                59.85 TFLOPS
+fwd+bwd FLOPS per GPU = 3 * fwd flops per GPU / (fwd+bwd latency):      53.86 TFLOPS
+step latency:                                                           64.54 us
+iter latency:                                                           2.93 s  
+FLOPS per GPU = 3 * fwd flops per GPU / iter latency:                   53.86 TFLOPS
+samples/second:                                                         0.68    
+
+----------------------------- Aggregated Profile per GPU -----------------------------
+Top 1 modules in terms of params, MACs or fwd latency at different model depths:
+depth 0:
+    params      - {'OPTForCausalLM': '270.56 M'}
+    MACs        - {'OPTForCausalLM': '26.3 TMACs'}
+    fwd latency - {'OPTForCausalLM': '1.17 s'}
+depth 1:
+    params      - {'OPTModel': '270.56 M'}
+    MACs        - {'OPTModel': '25.77 TMACs'}
+    fwd latency - {'OPTModel': '1.16 s'}
+depth 2:
+    params      - {'OPTDecoder': '270.56 M'}
+    MACs        - {'OPTDecoder': '25.77 TMACs'}
+    fwd latency - {'OPTDecoder': '1.16 s'}
+depth 3:
+    params      - {'Embedding': '257.39 M'}
+    MACs        - {'ModuleList': '25.77 TMACs'}
+    fwd latency - {'ModuleList': '1.04 s'}
+depth 4:
+    params      - {'OPTDecoderLayer': '2.66 M'}
+    MACs        - {'OPTDecoderLayer': '25.77 TMACs'}
+    fwd latency - {'OPTDecoderLayer': '1.04 s'}
+depth 5:
+    params      - {'Linear': '1.02 M'}
+    MACs        - {'Linear': '17.18 TMACs'}
+    fwd latency - {'OptFlashAttention2': '384.85 ms'}
+
+------------------------------ Detailed Profile per GPU ------------------------------
+Each module profile is listed after its name in the following order: 
+params, percentage of total params, MACs, percentage of total MACs, fwd latency, percentage of total fwd latency, fwd FLOPS
+
+Note: 1. A module can have torch.nn.module or torch.nn.functional to compute logits (e.g. CrossEntropyLoss). They are not counted as submodules, thus not to be printed out. However they make up the difference between a parent's MACs (or latency) and the sum of its submodules'.
+2. Number of floating-point operations is a theoretical estimation, thus FLOPS computed using that could be larger than the maximum system throughput.
+3. The fwd latency listed in the top module's profile is directly captured at the module forward function in PyTorch, thus it's less than the fwd latency shown above which is captured in DeepSpeed.
+
+OPTForCausalLM(
+  270.56 M = 100% Params, 26.3 TMACs = 100% MACs, 1.17 s = 100% latency, 45.07 TFLOPS
+  (model): OPTModel(
+    270.56 M = 100% Params, 25.77 TMACs = 98% MACs, 1.16 s = 99.36% latency, 44.45 TFLOPS
+    (decoder): OPTDecoder(
+      270.56 M = 100% Params, 25.77 TMACs = 98% MACs, 1.16 s = 99.36% latency, 44.45 TFLOPS
+      (embed_tokens): Embedding(257.39 M = 95.13% Params, 0 MACs = 0% MACs, 411.51 us = 0.04% latency, 0 FLOPS, 50272, 5120, padding_idx=1)
+      (embed_positions): OPTLearnedPositionalEmbedding(10.5 M = 3.88% Params, 0 MACs = 0% MACs, 504.26 us = 0.04% latency, 0 FLOPS, 2050, 5120)
+      (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 215.29 us = 0.02% latency, 121.76 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+      (layers): ModuleList(
+        (0): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 57.97 ms = 4.97% latency, 22.23 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 24.32 ms = 2.08% latency, 17.66 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.17 us = 0.03% latency, 263.06 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 403.64 us = 0.03% latency, 266.01 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 454.19 us = 0.04% latency, 236.41 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 419.38 us = 0.04% latency, 256.03 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.74 us = 0.02% latency, 107.14 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 243.66 us = 0.02% latency, 107.58 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 867.37 us = 0.07% latency, 495.17 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 857.59 us = 0.07% latency, 500.82 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 230.55 us = 0.02% latency, 113.7 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (1): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 48.32 ms = 4.14% latency, 26.67 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 24.36 ms = 2.09% latency, 17.63 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 416.52 us = 0.04% latency, 257.79 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 410.08 us = 0.04% latency, 261.84 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 416.52 us = 0.04% latency, 257.79 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.93 us = 0.03% latency, 263.21 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 197.89 us = 0.02% latency, 105.98 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 233.17 us = 0.02% latency, 112.42 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 858.78 us = 0.07% latency, 500.12 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 849.25 us = 0.07% latency, 505.74 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 235.56 us = 0.02% latency, 111.29 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (2): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.87 ms = 2.3% latency, 47.95 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.86 ms = 0.84% latency, 43.58 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 416.28 us = 0.04% latency, 257.94 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 411.75 us = 0.04% latency, 260.78 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 403.17 us = 0.03% latency, 266.33 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 412.46 us = 0.04% latency, 260.32 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 198.6 us = 0.02% latency, 105.6 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 227.21 us = 0.02% latency, 115.37 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 859.02 us = 0.07% latency, 499.98 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.1 us = 0.07% latency, 507.02 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 232.46 us = 0.02% latency, 112.77 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (3): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 27.1 ms = 2.32% latency, 47.55 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.92 ms = 0.85% latency, 43.31 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.46 us = 0.03% latency, 263.52 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 416.52 us = 0.04% latency, 257.79 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 401.02 us = 0.03% latency, 267.75 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 455.38 us = 0.04% latency, 235.79 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.26 us = 0.02% latency, 107.4 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 226.74 us = 0.02% latency, 115.62 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 869.04 us = 0.07% latency, 494.22 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 849.01 us = 0.07% latency, 505.88 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 245.57 us = 0.02% latency, 106.75 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (4): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.91 ms = 2.31% latency, 47.88 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.84 ms = 0.84% latency, 43.66 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.89 us = 0.04% latency, 262.6 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.46 us = 0.03% latency, 263.52 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 405.79 us = 0.03% latency, 264.61 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 416.76 us = 0.04% latency, 257.64 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 200.51 us = 0.02% latency, 104.59 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 226.74 us = 0.02% latency, 115.62 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 857.35 us = 0.07% latency, 500.96 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 848.05 us = 0.07% latency, 506.45 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 238.18 us = 0.02% latency, 110.06 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (5): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 27.07 ms = 2.32% latency, 47.61 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.83 ms = 0.84% latency, 43.68 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 413.66 us = 0.04% latency, 259.57 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.17 us = 0.03% latency, 263.06 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 403.4 us = 0.03% latency, 266.17 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 412.7 us = 0.04% latency, 260.17 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 193.6 us = 0.02% latency, 108.33 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 228.4 us = 0.02% latency, 114.77 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 858.07 us = 0.07% latency, 500.54 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.82 us = 0.07% latency, 506.59 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 231.27 us = 0.02% latency, 113.35 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (6): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.45 ms = 2.27% latency, 48.72 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.38 ms = 0.8% latency, 45.79 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 419.62 us = 0.04% latency, 255.89 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 410.32 us = 0.04% latency, 261.69 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 399.11 us = 0.03% latency, 269.03 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 414.61 us = 0.04% latency, 258.98 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 197.17 us = 0.02% latency, 106.36 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 225.54 us = 0.02% latency, 116.23 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 857.83 us = 0.07% latency, 500.68 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 848.29 us = 0.07% latency, 506.31 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 229.84 us = 0.02% latency, 114.06 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (7): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.59 ms = 2.28% latency, 48.46 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.4 ms = 0.81% latency, 45.69 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 413.18 us = 0.04% latency, 259.87 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.7 us = 0.03% latency, 263.37 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 399.83 us = 0.03% latency, 268.55 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 410.32 us = 0.04% latency, 261.69 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 193.83 us = 0.02% latency, 108.19 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 227.45 us = 0.02% latency, 115.25 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 860.45 us = 0.07% latency, 499.15 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.58 us = 0.07% latency, 506.73 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 229.6 us = 0.02% latency, 114.18 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (8): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.48 ms = 2.27% latency, 48.66 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.39 ms = 0.8% latency, 45.73 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 413.66 us = 0.04% latency, 259.57 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 415.56 us = 0.04% latency, 258.38 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 400.54 us = 0.03% latency, 268.07 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.41 us = 0.03% latency, 262.91 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 193.6 us = 0.02% latency, 108.33 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 223.88 us = 0.02% latency, 117.09 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 859.02 us = 0.07% latency, 499.98 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 849.49 us = 0.07% latency, 505.6 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 227.69 us = 0.02% latency, 115.13 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (9): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.51 ms = 2.27% latency, 48.61 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.41 ms = 0.81% latency, 45.64 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 415.09 us = 0.04% latency, 258.68 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 411.99 us = 0.04% latency, 260.62 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 403.64 us = 0.03% latency, 266.01 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 427.01 us = 0.04% latency, 251.46 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 194.55 us = 0.02% latency, 107.8 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 227.69 us = 0.02% latency, 115.13 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 859.02 us = 0.07% latency, 499.98 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.82 us = 0.07% latency, 506.59 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 231.98 us = 0.02% latency, 113 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (10): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.64 ms = 2.28% latency, 48.38 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.44 ms = 0.81% latency, 45.51 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.65 us = 0.04% latency, 262.75 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 409.6 us = 0.04% latency, 262.14 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 418.42 us = 0.04% latency, 256.62 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.65 us = 0.04% latency, 262.75 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 191.45 us = 0.02% latency, 109.54 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 227.21 us = 0.02% latency, 115.37 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 863.08 us = 0.07% latency, 497.64 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 849.49 us = 0.07% latency, 505.6 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 242.95 us = 0.02% latency, 107.9 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (11): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.91 ms = 2.31% latency, 47.89 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.65 ms = 0.83% latency, 44.51 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 461.1 us = 0.04% latency, 232.86 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.93 us = 0.03% latency, 263.21 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 634.43 us = 0.05% latency, 169.24 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 411.99 us = 0.04% latency, 260.62 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.98 us = 0.02% latency, 107.01 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 223.64 us = 0.02% latency, 117.22 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 857.83 us = 0.07% latency, 500.68 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 848.29 us = 0.07% latency, 506.31 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 230.07 us = 0.02% latency, 113.94 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (12): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.57 ms = 2.28% latency, 48.49 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.47 ms = 0.81% latency, 45.34 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 419.14 us = 0.04% latency, 256.18 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 413.42 us = 0.04% latency, 259.72 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 410.08 us = 0.04% latency, 261.84 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 410.8 us = 0.04% latency, 261.38 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.74 us = 0.02% latency, 107.14 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 226.74 us = 0.02% latency, 115.62 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 859.5 us = 0.07% latency, 499.71 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 851.39 us = 0.07% latency, 504.46 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 235.08 us = 0.02% latency, 111.51 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (13): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.44 ms = 2.27% latency, 48.74 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.36 ms = 0.8% latency, 45.91 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.7 us = 0.03% latency, 263.37 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 404.36 us = 0.03% latency, 265.54 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 402.93 us = 0.03% latency, 266.49 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 409.13 us = 0.04% latency, 262.45 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.98 us = 0.02% latency, 107.01 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 227.45 us = 0.02% latency, 115.25 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 864.74 us = 0.07% latency, 496.67 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 848.05 us = 0.07% latency, 506.45 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 233.17 us = 0.02% latency, 112.42 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (14): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.46 ms = 2.27% latency, 48.7 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.45 ms = 0.81% latency, 45.44 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 430.58 us = 0.04% latency, 249.37 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.7 us = 0.03% latency, 263.37 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 406.98 us = 0.03% latency, 263.83 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 410.56 us = 0.04% latency, 261.53 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 191.93 us = 0.02% latency, 109.27 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 229.36 us = 0.02% latency, 114.29 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 858.78 us = 0.07% latency, 500.12 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 848.53 us = 0.07% latency, 506.16 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 228.4 us = 0.02% latency, 114.77 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (15): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.49 ms = 2.27% latency, 48.64 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.36 ms = 0.8% latency, 45.89 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 416.52 us = 0.04% latency, 257.79 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 413.18 us = 0.04% latency, 259.87 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 406.74 us = 0.03% latency, 263.99 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 414.61 us = 0.04% latency, 258.98 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.03 us = 0.02% latency, 107.53 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 226.26 us = 0.02% latency, 115.86 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 858.31 us = 0.07% latency, 500.4 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 848.29 us = 0.07% latency, 506.31 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 229.6 us = 0.02% latency, 114.18 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (16): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.56 ms = 2.28% latency, 48.52 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.36 ms = 0.8% latency, 45.87 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.89 us = 0.04% latency, 262.6 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.89 us = 0.04% latency, 262.6 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 397.68 us = 0.03% latency, 270 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 420.09 us = 0.04% latency, 255.6 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 192.64 us = 0.02% latency, 108.86 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 224.11 us = 0.02% latency, 116.97 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 859.5 us = 0.07% latency, 499.71 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.82 us = 0.07% latency, 506.59 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 228.88 us = 0.02% latency, 114.53 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (17): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.47 ms = 2.27% latency, 48.68 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.41 ms = 0.81% latency, 45.64 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 405.07 us = 0.03% latency, 265.07 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 402.69 us = 0.03% latency, 266.64 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 415.56 us = 0.04% latency, 258.38 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 414.85 us = 0.04% latency, 258.83 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 199.79 us = 0.02% latency, 104.97 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 224.11 us = 0.02% latency, 116.97 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 859.5 us = 0.07% latency, 499.71 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.34 us = 0.07% latency, 506.88 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 228.17 us = 0.02% latency, 114.89 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (18): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.28 ms = 2.25% latency, 49.03 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.31 ms = 0.8% latency, 46.13 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 403.17 us = 0.03% latency, 266.33 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 404.12 us = 0.03% latency, 265.7 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 396.01 us = 0.03% latency, 271.14 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 404.6 us = 0.03% latency, 265.39 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.03 us = 0.02% latency, 107.53 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 220.78 us = 0.02% latency, 118.74 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 852.58 us = 0.07% latency, 503.76 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 843.29 us = 0.07% latency, 509.31 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 229.6 us = 0.02% latency, 114.18 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (19): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.49 ms = 2.27% latency, 48.64 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.33 ms = 0.8% latency, 46.04 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 400.07 us = 0.03% latency, 268.39 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 404.12 us = 0.03% latency, 265.7 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.41 us = 0.03% latency, 262.91 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 411.99 us = 0.04% latency, 260.62 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 196.7 us = 0.02% latency, 106.62 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 227.21 us = 0.02% latency, 115.37 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 854.73 us = 0.07% latency, 502.49 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 842.09 us = 0.07% latency, 510.03 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 229.12 us = 0.02% latency, 114.41 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (20): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.5 ms = 2.27% latency, 48.62 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.33 ms = 0.8% latency, 46.04 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 418.19 us = 0.04% latency, 256.76 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 403.64 us = 0.03% latency, 266.01 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 400.07 us = 0.03% latency, 268.39 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 409.36 us = 0.04% latency, 262.29 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 194.79 us = 0.02% latency, 107.66 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 224.11 us = 0.02% latency, 116.97 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 853.3 us = 0.07% latency, 503.34 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 842.57 us = 0.07% latency, 509.75 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 226.5 us = 0.02% latency, 115.74 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (21): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.39 ms = 2.26% latency, 48.82 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.39 ms = 0.8% latency, 45.74 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 410.56 us = 0.04% latency, 261.53 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 406.98 us = 0.03% latency, 263.83 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 395.54 us = 0.03% latency, 271.46 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.93 us = 0.03% latency, 263.21 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.26 us = 0.02% latency, 107.4 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 219.82 us = 0.02% latency, 119.25 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 858.31 us = 0.07% latency, 500.4 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.34 us = 0.07% latency, 506.88 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 228.4 us = 0.02% latency, 114.77 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (22): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.52 ms = 2.27% latency, 48.59 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.34 ms = 0.8% latency, 45.96 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.93 us = 0.03% latency, 263.21 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 402.69 us = 0.03% latency, 266.64 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 401.02 us = 0.03% latency, 267.75 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.41 us = 0.03% latency, 262.91 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.03 us = 0.02% latency, 107.53 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 222.68 us = 0.02% latency, 117.72 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 859.02 us = 0.07% latency, 499.98 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.58 us = 0.07% latency, 506.73 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 228.88 us = 0.02% latency, 114.53 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (23): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.37 ms = 2.26% latency, 48.87 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.3 ms = 0.8% latency, 46.2 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 405.79 us = 0.03% latency, 264.61 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 409.13 us = 0.04% latency, 262.45 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 400.54 us = 0.03% latency, 268.07 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 406.03 us = 0.03% latency, 264.45 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 190.73 us = 0.02% latency, 109.95 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 222.92 us = 0.02% latency, 117.59 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 858.55 us = 0.07% latency, 500.26 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.34 us = 0.07% latency, 506.88 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 228.17 us = 0.02% latency, 114.89 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (24): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.49 ms = 2.27% latency, 48.65 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.31 ms = 0.8% latency, 46.11 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 404.6 us = 0.03% latency, 265.39 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.22 us = 0.03% latency, 263.68 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 401.02 us = 0.03% latency, 267.75 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 410.56 us = 0.04% latency, 261.53 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 192.64 us = 0.02% latency, 108.86 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 220.78 us = 0.02% latency, 118.74 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 858.78 us = 0.07% latency, 500.12 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 849.25 us = 0.07% latency, 505.74 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 224.59 us = 0.02% latency, 116.72 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (25): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.43 ms = 2.26% latency, 48.75 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.33 ms = 0.8% latency, 46.04 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 402.69 us = 0.03% latency, 266.64 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.41 us = 0.03% latency, 262.91 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 400.3 us = 0.03% latency, 268.23 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 419.38 us = 0.04% latency, 256.03 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 190.5 us = 0.02% latency, 110.09 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 222.68 us = 0.02% latency, 117.72 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 856.64 us = 0.07% latency, 501.37 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 852.82 us = 0.07% latency, 503.62 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 225.78 us = 0.02% latency, 116.1 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (26): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.51 ms = 2.27% latency, 48.61 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.32 ms = 0.8% latency, 46.07 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 401.74 us = 0.03% latency, 267.28 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 404.6 us = 0.03% latency, 265.39 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 405.31 us = 0.03% latency, 264.92 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 409.36 us = 0.04% latency, 262.29 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 208.38 us = 0.02% latency, 100.64 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 221.01 us = 0.02% latency, 118.61 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 857.35 us = 0.07% latency, 500.96 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 852.58 us = 0.07% latency, 503.76 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 223.4 us = 0.02% latency, 117.34 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (27): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.53 ms = 2.27% latency, 48.56 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.3 ms = 0.8% latency, 46.2 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 408.41 us = 0.03% latency, 262.91 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 404.6 us = 0.03% latency, 265.39 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 398.16 us = 0.03% latency, 269.68 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 406.74 us = 0.03% latency, 263.99 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 194.55 us = 0.02% latency, 107.8 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 231.03 us = 0.02% latency, 113.47 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 858.78 us = 0.07% latency, 500.12 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.34 us = 0.07% latency, 506.88 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 229.12 us = 0.02% latency, 114.41 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (28): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.69 ms = 2.29% latency, 48.28 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.56 ms = 0.82% latency, 44.92 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.22 us = 0.03% latency, 263.68 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 402.21 us = 0.03% latency, 266.96 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 456.33 us = 0.04% latency, 235.3 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.7 us = 0.03% latency, 263.37 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.98 us = 0.02% latency, 107.01 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 221.25 us = 0.02% latency, 118.48 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 857.59 us = 0.07% latency, 500.82 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.82 us = 0.07% latency, 506.59 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 226.97 us = 0.02% latency, 115.49 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (29): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.47 ms = 2.27% latency, 48.68 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.31 ms = 0.8% latency, 46.14 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.22 us = 0.03% latency, 263.68 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 401.5 us = 0.03% latency, 267.43 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 402.69 us = 0.03% latency, 266.64 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 409.13 us = 0.04% latency, 262.45 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 193.83 us = 0.02% latency, 108.19 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 219.11 us = 0.02% latency, 119.64 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 857.83 us = 0.07% latency, 500.68 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 849.25 us = 0.07% latency, 505.74 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 228.4 us = 0.02% latency, 114.77 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (30): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.36 ms = 2.26% latency, 48.88 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.33 ms = 0.8% latency, 46.04 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 404.83 us = 0.03% latency, 265.23 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 401.74 us = 0.03% latency, 267.28 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 396.49 us = 0.03% latency, 270.81 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 404.83 us = 0.03% latency, 265.23 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 190.73 us = 0.02% latency, 109.95 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 222.92 us = 0.02% latency, 117.59 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 859.26 us = 0.07% latency, 499.84 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 848.05 us = 0.07% latency, 506.45 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 222.68 us = 0.02% latency, 117.72 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (31): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.44 ms = 2.27% latency, 48.73 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.31 ms = 0.8% latency, 46.15 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 401.26 us = 0.03% latency, 267.59 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 411.03 us = 0.04% latency, 261.23 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 395.3 us = 0.03% latency, 271.63 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 405.79 us = 0.03% latency, 264.61 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.26 us = 0.02% latency, 107.4 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 222.68 us = 0.02% latency, 117.72 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 858.07 us = 0.07% latency, 500.54 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.34 us = 0.07% latency, 506.88 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 226.5 us = 0.02% latency, 115.74 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (32): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.52 ms = 2.27% latency, 48.59 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.31 ms = 0.8% latency, 46.13 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 405.79 us = 0.03% latency, 264.61 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 403.17 us = 0.03% latency, 266.33 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 399.59 us = 0.03% latency, 268.71 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 407.22 us = 0.03% latency, 263.68 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 190.73 us = 0.02% latency, 109.95 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 224.11 us = 0.02% latency, 116.97 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 859.02 us = 0.07% latency, 499.98 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.1 us = 0.07% latency, 507.02 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 227.93 us = 0.02% latency, 115.01 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (33): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.67 ms = 2.29% latency, 48.31 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.35 ms = 0.8% latency, 45.96 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 406.98 us = 0.03% latency, 263.83 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 401.02 us = 0.03% latency, 267.75 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 399.83 us = 0.03% latency, 268.55 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 406.5 us = 0.03% latency, 264.14 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 195.26 us = 0.02% latency, 107.4 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 222.68 us = 0.02% latency, 117.72 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 859.26 us = 0.07% latency, 499.84 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 848.53 us = 0.07% latency, 506.16 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 224.35 us = 0.02% latency, 116.85 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (34): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.5 ms = 2.27% latency, 48.63 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.32 ms = 0.8% latency, 46.1 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 402.69 us = 0.03% latency, 266.64 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 401.97 us = 0.03% latency, 267.12 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 399.35 us = 0.03% latency, 268.87 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 405.07 us = 0.03% latency, 265.07 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 194.55 us = 0.02% latency, 107.8 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 223.64 us = 0.02% latency, 117.22 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 858.31 us = 0.07% latency, 500.4 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 847.1 us = 0.07% latency, 507.02 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 228.4 us = 0.02% latency, 114.77 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (35): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 26.6 ms = 2.28% latency, 48.44 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 9.31 ms = 0.8% latency, 46.11 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 406.03 us = 0.03% latency, 264.45 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 401.74 us = 0.03% latency, 267.28 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 398.64 us = 0.03% latency, 269.35 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 405.79 us = 0.03% latency, 264.61 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 193.6 us = 0.02% latency, 108.33 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 220.54 us = 0.02% latency, 118.87 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 857.83 us = 0.07% latency, 500.68 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 846.39 us = 0.07% latency, 507.45 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 226.02 us = 0.02% latency, 115.98 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (36): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 8.07 ms = 0.69% latency, 159.6 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 4 ms = 0.34% latency, 107.38 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 410.56 us = 0.04% latency, 261.53 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 390.53 us = 0.03% latency, 274.95 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 398.64 us = 0.03% latency, 269.35 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 394.34 us = 0.03% latency, 272.29 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 186.68 us = 0.02% latency, 112.34 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 220.78 us = 0.02% latency, 118.74 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 855.92 us = 0.07% latency, 501.79 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 846.15 us = 0.07% latency, 507.59 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 213.38 us = 0.02% latency, 122.85 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (37): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 7.9 ms = 0.68% latency, 163.16 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 3.86 ms = 0.33% latency, 111.36 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 366.93 us = 0.03% latency, 292.63 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 366.45 us = 0.03% latency, 293.01 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 370.74 us = 0.03% latency, 289.62 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 366.69 us = 0.03% latency, 292.82 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 178.34 us = 0.02% latency, 117.59 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 223.4 us = 0.02% latency, 117.34 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 855.45 us = 0.07% latency, 502.07 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 845.67 us = 0.07% latency, 507.88 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 213.86 us = 0.02% latency, 122.58 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (38): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 7.85 ms = 0.67% latency, 164.06 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 3.83 ms = 0.33% latency, 112 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 367.64 us = 0.03% latency, 292.06 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 365.02 us = 0.03% latency, 294.16 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 367.64 us = 0.03% latency, 292.06 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 367.16 us = 0.03% latency, 292.44 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 177.86 us = 0.02% latency, 117.91 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 211.95 us = 0.02% latency, 123.68 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 857.11 us = 0.07% latency, 501.1 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 846.15 us = 0.07% latency, 507.59 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 210.52 us = 0.02% latency, 124.52 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+        (39): OPTDecoderLayer(
+          66.56 K = 0.02% Params, 644.25 GMACs = 2.45% MACs, 7.91 ms = 0.68% latency, 162.8 TFLOPS
+          (self_attn): OptFlashAttention2(
+            20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 3.88 ms = 0.33% latency, 110.57 TFLOPS
+            (k_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 367.16 us = 0.03% latency, 292.44 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (v_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 366.45 us = 0.03% latency, 293.01 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (q_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 368.6 us = 0.03% latency, 291.31 TFLOPS, in_features=5120, out_features=5120, bias=True)
+            (out_proj): Linear(5.12 K = 0% Params, 53.69 GMACs = 0.2% MACs, 367.64 us = 0.03% latency, 292.06 TFLOPS, in_features=5120, out_features=5120, bias=True)
+          )
+          (activation_fn): ReLU(0 = 0% Params, 0 MACs = 0% MACs, 176.67 us = 0.02% latency, 118.71 GFLOPS)
+          (self_attn_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 212.19 us = 0.02% latency, 123.54 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+          (fc1): Linear(20.48 K = 0.01% Params, 214.75 GMACs = 0.82% MACs, 856.64 us = 0.07% latency, 501.37 TFLOPS, in_features=5120, out_features=20480, bias=True)
+          (fc2): Linear(5.12 K = 0% Params, 214.75 GMACs = 0.82% MACs, 845.67 us = 0.07% latency, 507.88 TFLOPS, in_features=20480, out_features=5120, bias=True)
+          (final_layer_norm): LayerNorm(10.24 K = 0% Params, 0 MACs = 0% MACs, 213.62 us = 0.02% latency, 122.71 GFLOPS, (5120,), eps=1e-05, elementwise_affine=True)
+        )
+      )
+    )
+  )
+  (lm_head): Linear(257.39 M = 95.13% Params, 527.14 GMACs = 2% MACs, 1.98 ms = 0.17% latency, 533.15 TFLOPS, in_features=5120, out_features=50272, bias=False)
+)
+------------------------------------------------------------------------------
